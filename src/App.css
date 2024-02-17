@@ -1,0 +1,59 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.row_space_between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+}
+
+.row_space_around {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 10px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.border {
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+.width_500 {
+  width: 500px;
+}
+
+.margin_top {
+  margin-top: 20px;
+}
+
+.green {
+  color: green;
+}
+
+.red {
+  color: red;
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 5px;
+}
+
+.table td {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 7px;
+}
