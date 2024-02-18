@@ -3,6 +3,9 @@ import "./App.css";
 
 function App() {
   const [teacherLoggedIn, setteacherLoggedIn] = useState(false);
+  const [isQuizPage, setisQuizPage] = useState(false);
+
+  const [currentQuizID, setcurrentQuizID] = useState(null);
 
   useEffect(() => {
     const checkIfTeacherLoggedIn = () => {
@@ -14,12 +17,26 @@ function App() {
       }
     };
 
+    const checkIfQuiz = () => {
+      const queryParameters = new URLSearchParams(window.location.search);
+      const quizID = queryParameters.get("quizID");
+      if (quizID) {
+        setisQuizPage(true);
+        setcurrentQuizID(quizID);
+      }
+    };
+
+    checkIfQuiz();
     checkIfTeacherLoggedIn();
   }, []);
 
   return (
     <div className="App">
-      {teacherLoggedIn ? <Dashboard /> : <LogRegTeacher />}
+      {isQuizPage ? (
+        <QuizPage currentQuizID={currentQuizID} />
+      ) : (
+        <>{teacherLoggedIn ? <Dashboard /> : <LogRegTeacher />}</>
+      )}
     </div>
   );
 }
@@ -309,11 +326,60 @@ const AllQuestions = () => {
     getAllQuestionsWithAnswers();
   }, []);
 
+  const [selectedQuestions, setselectedQuestions] = useState([]);
+  const [passcodeForQuiz, setpasscodeForQuiz] = useState("");
+
+  const handleRowCheckboxChange = (questionID) => {
+    if (selectedQuestions.includes(questionID)) {
+      setselectedQuestions(selectedQuestions.filter((id) => id !== questionID));
+    } else {
+      setselectedQuestions([...selectedQuestions, questionID]);
+    }
+  };
+
+  const createQuiz = () => {
+    if (!selectedQuestions.length || !passcodeForQuiz) return;
+
+    fetch(`${process.env.REACT_APP_SERVER_LINK}/teacher-create-quiz`, {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        teacher_id: sessionStorage.getItem("teacher_id"),
+        questions: selectedQuestions,
+        passcode: passcodeForQuiz,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          setpasscodeForQuiz("");
+          setselectedQuestions([]);
+          console.log(data.msg);
+        }
+      });
+  };
+
   return (
     <div className="margin_top">
+      {selectedQuestions.length === 0 ? null : (
+        <div className="row">
+          <input
+            type="text"
+            placeholder="Passcode for quiz"
+            value={passcodeForQuiz}
+            onChange={(e) => {
+              setpasscodeForQuiz(e.target.value);
+            }}
+          />
+          <button onClick={createQuiz}>Create Quiz</button>
+        </div>
+      )}
       <table className="table">
         <thead>
           <tr>
+            <td></td>
             <td>ID</td>
             <td>Question</td>
             <td>Answers</td>
@@ -324,6 +390,15 @@ const AllQuestions = () => {
           {allQuestions.map((question) => {
             return (
               <tr key={question.question_id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedQuestions.includes(question.question_id)}
+                    onChange={() =>
+                      handleRowCheckboxChange(question.question_id)
+                    }
+                  />
+                </td>
                 <td>{question.question_id}</td>
                 <td>{question.question}</td>
                 <td>
@@ -347,6 +422,122 @@ const AllQuestions = () => {
     </div>
   );
 };
+
 const Quizzes = () => {
-  return <div className="margin_top">All Quizzes</div>;
+  const [allQuizzes, setallQuizzes] = useState([]);
+
+  useEffect(() => {
+    const getAllQuizzesWithAnswers = () => {
+      fetch(`${process.env.REACT_APP_SERVER_LINK}/teacher-get-quizzes`, {
+        method: "post",
+        headers: { "Content-Type": "application/json" },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.status) {
+            console.log(data.msg);
+          } else {
+            setallQuizzes(data.result);
+          }
+        });
+    };
+    getAllQuizzesWithAnswers();
+  }, []);
+
+  const [quizQuestions, setquizQuestions] = useState([]);
+
+  const viewQuestionsForQuiz = (questionIDs) => {
+    fetch(
+      `${process.env.REACT_APP_SERVER_LINK}/teacher-get-questions-for-quiz`,
+      {
+        method: "post",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionIDs,
+        }),
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          setquizQuestions(data.result);
+        }
+      });
+  };
+
+  return (
+    <div className="margin_top row_space_between">
+      <table className="table">
+        <thead>
+          <tr>
+            <td>ID</td>
+            <td>Passcode</td>
+            <td># of Questions</td>
+            <td>By</td>
+            <td>Controls</td>
+          </tr>
+        </thead>
+        <tbody>
+          {allQuizzes.map((quiz) => {
+            return (
+              <tr key={quiz.id}>
+                <td>{quiz.id}</td>
+                <td>{quiz.passcode}</td>
+                <td>{quiz.questions.length}</td>
+                <td>{`${quiz.fname} ${quiz.lname}`}</td>
+                <td>
+                  <button onClick={() => viewQuestionsForQuiz(quiz.questions)}>
+                    View Questions
+                  </button>
+                  <button>Submissions X</button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${process.env.REACT_APP_FRONT_END_LINK}?quizID=${quiz.id}`
+                      );
+                    }}
+                  >
+                    Copy Link
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {quizQuestions.length === 0 ? null : (
+        <table className="table">
+          <thead>
+            <tr>
+              <td>ID</td>
+              <td>Question</td>
+              <td>Answer</td>
+            </tr>
+          </thead>
+          <tbody>
+            {quizQuestions.map((question) => {
+              return (
+                <tr key={question.question_id}>
+                  <td>{question.question_id}</td>
+                  <td>{question.question.slice(0, 50) + "..."}</td>
+                  <td>{question.answer}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+const QuizPage = ({ currentQuizID }) => {
+  return (
+    <div>
+      <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+    </div>
+  );
 };
