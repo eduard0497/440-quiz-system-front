@@ -1,3 +1,8 @@
+.place_itself_center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .row {
   display: flex;
   align-items: center;

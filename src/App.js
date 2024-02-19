@@ -535,9 +535,186 @@ const Quizzes = () => {
 };
 
 const QuizPage = ({ currentQuizID }) => {
+  const [currentView, setcurrentView] = useState("");
+
+  useEffect(() => {
+    const checkForProgressID = () => {
+      let progress_id = sessionStorage.getItem("progress_id");
+      if (progress_id) {
+        fetch(
+          `${process.env.REACT_APP_SERVER_LINK}/student-get-quiz-progress`,
+          {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              progress_id,
+            }),
+          }
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            setcurrentView(data.status);
+          });
+      } else {
+        setcurrentView("");
+      }
+    };
+
+    checkForProgressID();
+  }, [currentQuizID]);
+
+  const pickCurrentView = () => {
+    switch (currentView) {
+      case "pending":
+        return (
+          <>
+            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <QuizPending currentQuizID={currentQuizID} />
+          </>
+        );
+      case "started":
+        return (
+          <>
+            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <QuizStarted currentQuizID={currentQuizID} />
+          </>
+        );
+      case "finished":
+        return (
+          <>
+            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <QuizFinished currentQuizID={currentQuizID} />
+          </>
+        );
+      default:
+        return (
+          <>
+            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <QuizLogin currentQuizID={currentQuizID} />
+          </>
+        );
+    }
+  };
+
+  return <>{pickCurrentView()}</>;
+};
+
+const QuizLogin = ({ currentQuizID }) => {
+  const [studentID, setstudentID] = useState("");
+  const [studentName, setstudentName] = useState("");
+  const [quizPassword, setquizPassword] = useState("");
+
+  const clearInputs = () => {
+    setstudentID("");
+    setstudentName("");
+    setquizPassword("");
+  };
+
+  const submitUserInfo = () => {
+    if (!studentID || !studentName) return;
+
+    fetch(`${process.env.REACT_APP_SERVER_LINK}/student-login`, {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quiz_id: currentQuizID,
+        student_id: studentID,
+        student_name: studentName,
+        quiz_password: quizPassword,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          sessionStorage.setItem("progress_id", data.progress_id);
+          window.location.reload();
+        }
+      });
+  };
+
   return (
     <div>
-      <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+      <div className="column border width_500 margin_top place_itself_center">
+        <input
+          type="text"
+          placeholder="Student ID..."
+          value={studentID}
+          onChange={(e) => setstudentID(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Student Name..."
+          value={studentName}
+          onChange={(e) => setstudentName(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Quiz Password..."
+          value={quizPassword}
+          onChange={(e) => setquizPassword(e.target.value)}
+        />
+        <div className="row_space_around">
+          <button onClick={clearInputs}>CLEAR</button>
+          <button onClick={submitUserInfo}>SUBMIT</button>
+        </div>
+      </div>
     </div>
   );
+};
+
+const QuizPending = ({ currentQuizID }) => {
+  const [quizInfo, setquizInfo] = useState([]);
+
+  useEffect(() => {
+    const getQuizInfo = () => {
+      fetch(
+        `${process.env.REACT_APP_SERVER_LINK}/student-get-general-quiz-info`,
+        {
+          method: "post",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quiz_id: currentQuizID,
+          }),
+        }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.status) {
+            console.log(data.msg);
+          } else {
+            setquizInfo(data.result);
+          }
+        });
+    };
+
+    getQuizInfo();
+  }, [currentQuizID]);
+
+  const startQuiz = () => {
+    console.log("Start Quiz");
+  };
+
+  return (
+    <>
+      {quizInfo.length === 0 ? null : (
+        <div className="column border width_500 margin_top place_itself_center">
+          <h1>Quiz ID: {currentQuizID}</h1>
+          <h1>Time Limit: 30 Min</h1>
+          <h1>Number of Questions: {quizInfo[0].questions.length}</h1>
+          <h1>
+            By: {`${quizInfo[0].teacher_fname} ${quizInfo[0].teacher_lname}`}
+          </h1>
+          <button onClick={startQuiz}>START QUIZ!</button>
+        </div>
+      )}
+    </>
+  );
+};
+const QuizStarted = ({ currentQuizID }) => {
+  return <div>Started</div>;
+};
+const QuizFinished = ({ currentQuizID }) => {
+  return <div>Finished</div>;
 };
