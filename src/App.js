@@ -693,7 +693,21 @@ const QuizPending = ({ currentQuizID }) => {
   }, [currentQuizID]);
 
   const startQuiz = () => {
-    console.log("Start Quiz");
+    fetch(`${process.env.REACT_APP_SERVER_LINK}/student-start-quiz`, {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        progress_id: sessionStorage.getItem("progress_id"),
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          window.location.reload();
+        }
+      });
   };
 
   return (
@@ -712,9 +726,105 @@ const QuizPending = ({ currentQuizID }) => {
     </>
   );
 };
+
 const QuizStarted = ({ currentQuizID }) => {
-  return <div>Started</div>;
+  const [quizProgress, setquizProgress] = useState([]);
+
+  useEffect(() => {
+    const getQuizProgress = () => {
+      let progress_id = sessionStorage.getItem("progress_id");
+      if (progress_id) {
+        fetch(
+          `${process.env.REACT_APP_SERVER_LINK}/student-get-started-quiz-progress`,
+          {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              progress_id,
+            }),
+          }
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.status) {
+              console.log(data.msg);
+            } else {
+              setquizProgress(data.result);
+            }
+          });
+      } else {
+        console.log("Error In Front End");
+      }
+    };
+
+    getQuizProgress();
+  }, []);
+
+  console.log(quizProgress);
+
+  return (
+    <div className="margin_top">
+      {!quizProgress.length ? null : (
+        <div className="row_space_around place_itself_center margin_top border">
+          <h2>ID: {quizProgress[0].quiz_id}</h2>
+          <h2>Student ID: {quizProgress[0].student_id}</h2>
+          <h2>Student Name: {quizProgress[0].student_name}</h2>
+          <h2>Started: {new Date(quizProgress[0].started).toLocaleString()}</h2>
+          <h2>
+            Timer: <CountdownTimer startTime={quizProgress[0].started} />{" "}
+          </h2>
+        </div>
+      )}
+      <div className="margin_top">
+        <h1>QUESTIONS HERE</h1>
+        <button>SUBMIT QUIZ!</button>
+      </div>
+    </div>
+  );
 };
+
 const QuizFinished = ({ currentQuizID }) => {
   return <div>Finished</div>;
+};
+
+//
+const CountdownTimer = ({ startTime }) => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newRemainingTime = calculateRemainingTime(startTime);
+      setRemainingTime(newRemainingTime);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const calculateRemainingTime = (startTime) => {
+    const now = new Date().getTime();
+    const startTimeInMillis = new Date(startTime).getTime(); // Convert datetime to milliseconds
+    const endTimeInMillis = startTimeInMillis + 30 * 60 * 1000; // Add 30 minutes
+    let difference = endTimeInMillis - now;
+    if (difference <= 0) {
+      return { hours: 0, minutes: 0, seconds: 0 };
+    }
+    const hours = Math.floor(
+      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+    return { hours, minutes, seconds };
+  };
+
+  const [remainingTime, setRemainingTime] = useState(
+    calculateRemainingTime(startTime)
+  );
+
+  return (
+    <>
+      {`${remainingTime.minutes
+        .toString()
+        .padStart(2, "0")}:${remainingTime.seconds
+        .toString()
+        .padStart(2, "0")}`}
+    </>
+  );
 };
