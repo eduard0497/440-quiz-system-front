@@ -467,8 +467,33 @@ const Quizzes = () => {
       });
   };
 
+  const [allQuizSubmissions, setallQuizSubmissions] = useState([]);
+
+  const getSubmissionsForQuiz = (quiz_id) => {
+    fetch(
+      `${process.env.REACT_APP_SERVER_LINK}/teacher-get-submissions-for-quiz`,
+      {
+        method: "post",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quiz_id,
+        }),
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          setallQuizSubmissions(data.result);
+        }
+      });
+  };
+
+  console.log(allQuizSubmissions);
+
   return (
-    <div className="margin_top row_space_between">
+    <div className="margin_top">
       <table className="table">
         <thead>
           <tr>
@@ -491,7 +516,9 @@ const Quizzes = () => {
                   <button onClick={() => viewQuestionsForQuiz(quiz.questions)}>
                     View Questions
                   </button>
-                  <button>Submissions X</button>
+                  <button onClick={() => getSubmissionsForQuiz(quiz.id)}>
+                    Submissions
+                  </button>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(
@@ -508,28 +535,68 @@ const Quizzes = () => {
         </tbody>
       </table>
 
-      {quizQuestions.length === 0 ? null : (
-        <table className="table">
-          <thead>
-            <tr>
-              <td>ID</td>
-              <td>Question</td>
-              <td>Answer</td>
-            </tr>
-          </thead>
-          <tbody>
-            {quizQuestions.map((question) => {
-              return (
-                <tr key={question.question_id}>
-                  <td>{question.question_id}</td>
-                  <td>{question.question.slice(0, 50) + "..."}</td>
-                  <td>{question.answer}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <div className="row_space_between">
+        {quizQuestions.length === 0 ? null : (
+          <table className="table">
+            <thead>
+              <tr>
+                <td>ID</td>
+                <td>Question</td>
+                <td>Answer</td>
+              </tr>
+            </thead>
+            <tbody>
+              {quizQuestions.map((question) => {
+                return (
+                  <tr key={question.question_id}>
+                    <td>{question.question_id}</td>
+                    <td>{question.question.slice(0, 50) + "..."}</td>
+                    <td>{question.answer}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {allQuizSubmissions.length === 0 ? null : (
+          <table className="table place_itself_center margin_top">
+            <thead>
+              <tr>
+                <td>Quiz ID</td>
+                <td>Student ID</td>
+                <td>Student Name</td>
+                <td>Total Points</td>
+                <td>Earned Points</td>
+                <td>Grade</td>
+                <td>Started</td>
+                <td>Finished</td>
+              </tr>
+            </thead>
+            <tbody>
+              {allQuizSubmissions.map((data) => {
+                return (
+                  <tr key={data.id}>
+                    <td>{data.quiz_id}</td>
+                    <td>{data.student_id}</td>
+                    <td>{data.student_name}</td>
+                    <td>{data.total_quiz_points}</td>
+                    <td>{data.student_earned_points}</td>
+                    {data.final_percentage ? (
+                      <td>{`${data.final_percentage}%`}</td>
+                    ) : (
+                      <td></td>
+                    )}
+
+                    <td>{new Date(data.started).toLocaleString()}</td>
+                    <td>{new Date(data.finished).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 };
@@ -563,26 +630,40 @@ const QuizPage = ({ currentQuizID }) => {
     checkForProgressID();
   }, [currentQuizID]);
 
+  const exitQuiz = () => {
+    sessionStorage.clear();
+    window.location.reload();
+  };
+
   const pickCurrentView = () => {
     switch (currentView) {
       case "pending":
         return (
           <>
-            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <div className="row_space_around">
+              <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+            </div>
             <QuizPending currentQuizID={currentQuizID} />
           </>
         );
       case "started":
         return (
           <>
-            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <div className="row_space_around">
+              <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+            </div>
             <QuizStarted currentQuizID={currentQuizID} />
           </>
         );
       case "finished":
         return (
           <>
-            <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+            <div className="row_space_around">
+              <h1 className="text_center">QUIZ #{currentQuizID}</h1>
+              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+            </div>
             <QuizFinished currentQuizID={currentQuizID} />
           </>
         );
@@ -729,6 +810,162 @@ const QuizPending = ({ currentQuizID }) => {
 
 const QuizStarted = ({ currentQuizID }) => {
   const [quizProgress, setquizProgress] = useState([]);
+  const [quizQuestions, setquizQuestions] = useState([]);
+
+  useEffect(() => {
+    const getQuizProgress = () => {
+      let progress_id = sessionStorage.getItem("progress_id");
+      if (progress_id) {
+        fetch(
+          `${process.env.REACT_APP_SERVER_LINK}/student-get-started-quiz-progress`,
+          {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              progress_id,
+            }),
+          }
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.status) {
+              console.log(data.msg);
+            } else {
+              setquizProgress(data.result);
+            }
+          });
+      } else {
+        console.log("Error In Front End");
+      }
+    };
+
+    const getQuizQuestions = () => {
+      let progress_id = sessionStorage.getItem("progress_id");
+      if (progress_id) {
+        fetch(
+          `${process.env.REACT_APP_SERVER_LINK}/student-get-quiz-questions`,
+          {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              quiz_id: currentQuizID,
+            }),
+          }
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.status) {
+              console.log(data.msg);
+            } else {
+              setquizQuestions(data.result);
+            }
+          });
+      } else {
+        console.log("Error In Front End fetching quiz questions");
+      }
+    };
+
+    getQuizQuestions();
+    getQuizProgress();
+  }, [currentQuizID]);
+
+  const [selectedAnswers, setselectedAnswers] = useState([]);
+
+  const handleAnswerSelection = (questionId, answerId) => {
+    let copy = [...selectedAnswers];
+    let foundIndex = copy.findIndex((answer) =>
+      answer.hasOwnProperty(questionId)
+    );
+    if (foundIndex === -1) {
+      setselectedAnswers([...copy, { [questionId]: answerId }]);
+    } else {
+      copy[foundIndex] = { [questionId]: answerId };
+      setselectedAnswers(copy);
+    }
+  };
+
+  const submitQuiz = () => {
+    let quizQuestionIDs = quizQuestions.map((question) => question.question_id);
+    fetch(`${process.env.REACT_APP_SERVER_LINK}/student-submit-quiz`, {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quiz_question_ids: quizQuestionIDs,
+        quiz_progress_id: quizProgress[0].id,
+        selected_answers: selectedAnswers,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.status) {
+          console.log(data.msg);
+        } else {
+          window.location.reload();
+        }
+      });
+  };
+
+  return (
+    <div className="margin_top">
+      {!quizProgress.length ? null : (
+        <div className="row_space_around place_itself_center margin_top border">
+          <h2>ID: {quizProgress[0].quiz_id}</h2>
+          <h2>Student ID: {quizProgress[0].student_id}</h2>
+          <h2>Student Name: {quizProgress[0].student_name}</h2>
+          <h2>Started: {new Date(quizProgress[0].started).toLocaleString()}</h2>
+          <h2>
+            Timer: <CountdownTimer startTime={quizProgress[0].started} />{" "}
+          </h2>
+        </div>
+      )}
+
+      {!quizQuestions.length ? null : (
+        <div className="margin_top">
+          {quizQuestions.map((question) => {
+            return (
+              <div
+                key={question.question_id}
+                className="margin_top border padding_20px"
+              >
+                <h2>{question.question}</h2>
+                <div className="column">
+                  {question.answers.map((answer) => {
+                    return (
+                      <div key={answer.id}>
+                        <input
+                          type="radio"
+                          id={answer.id}
+                          name={`answer_${question.question_id}`}
+                          value={answer.id}
+                          checked={selectedAnswers.find(
+                            (selection) => selection[question.id] === answer.id
+                          )}
+                          onChange={() =>
+                            handleAnswerSelection(
+                              question.question_id,
+                              answer.id
+                            )
+                          }
+                        />
+                        <label htmlFor={answer.id}>{answer.answer}</label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <button className="margin_top" onClick={submitQuiz}>
+            SUBMIT QUIZ!
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const QuizFinished = () => {
+  const [quizProgress, setquizProgress] = useState([]);
 
   useEffect(() => {
     const getQuizProgress = () => {
@@ -760,34 +997,45 @@ const QuizStarted = ({ currentQuizID }) => {
     getQuizProgress();
   }, []);
 
-  console.log(quizProgress);
-
   return (
-    <div className="margin_top">
-      {!quizProgress.length ? null : (
-        <div className="row_space_around place_itself_center margin_top border">
-          <h2>ID: {quizProgress[0].quiz_id}</h2>
-          <h2>Student ID: {quizProgress[0].student_id}</h2>
-          <h2>Student Name: {quizProgress[0].student_name}</h2>
-          <h2>Started: {new Date(quizProgress[0].started).toLocaleString()}</h2>
-          <h2>
-            Timer: <CountdownTimer startTime={quizProgress[0].started} />{" "}
-          </h2>
-        </div>
+    <>
+      {quizProgress.length === 0 ? null : (
+        <table className="table place_itself_center margin_top">
+          <thead>
+            <tr>
+              <td>Quiz ID</td>
+              <td>Student ID</td>
+              <td>Student Name</td>
+              <td>Total Points</td>
+              <td>Earned Points</td>
+              <td>Grade</td>
+              <td>Started</td>
+              <td>Finished</td>
+            </tr>
+          </thead>
+          <tbody>
+            {quizProgress.map((data) => {
+              return (
+                <tr key={data.id}>
+                  <td>{data.quiz_id}</td>
+                  <td>{data.student_id}</td>
+                  <td>{data.student_name}</td>
+                  <td>{data.total_quiz_points}</td>
+                  <td>{data.student_earned_points}</td>
+                  <td>{data.final_percentage}%</td>
+                  <td>{new Date(data.started).toLocaleString()}</td>
+                  <td>{new Date(data.finished).toLocaleString()}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
-      <div className="margin_top">
-        <h1>QUESTIONS HERE</h1>
-        <button>SUBMIT QUIZ!</button>
-      </div>
-    </div>
+    </>
   );
 };
 
-const QuizFinished = ({ currentQuizID }) => {
-  return <div>Finished</div>;
-};
-
-//
+// Components
 const CountdownTimer = ({ startTime }) => {
   useEffect(() => {
     const interval = setInterval(() => {

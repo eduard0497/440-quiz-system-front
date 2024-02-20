@@ -3,6 +3,10 @@
   margin-right: auto;
 }
 
+.padding_20px {
+  padding: 20px;
+}
+
 .row {
   display: flex;
   align-items: center;
