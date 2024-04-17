@@ -172,6 +172,8 @@ const LogRegTeacher = () => {
 
 const Dashboard = () => {
   const [teacherInfo, setTeacherInfo] = useState({});
+  const [questionAddedTrigger, setquestionAddedTrigger] = useState(false);
+  const [quizAddedTrigger, setquizAddedTrigger] = useState(false);
 
   useEffect(() => {
     const setTeacher = () => {
@@ -198,14 +200,21 @@ const Dashboard = () => {
         </h1>
         <button onClick={logOut}>Log Out</button>
       </div>
-      <AddQuestions />
-      <AllQuestions />
-      <Quizzes />
+      <AddQuestions
+        questionAddedTrigger={questionAddedTrigger}
+        setquestionAddedTrigger={setquestionAddedTrigger}
+      />
+      <AllQuestions
+        questionAddedTrigger={questionAddedTrigger}
+        quizAddedTrigger={quizAddedTrigger}
+        setquizAddedTrigger={setquizAddedTrigger}
+      />
+      <Quizzes quizAddedTrigger={quizAddedTrigger} />
     </div>
   );
 };
 
-const AddQuestions = () => {
+const AddQuestions = ({ questionAddedTrigger, setquestionAddedTrigger }) => {
   const [questionToAdd, setquestionToAdd] = useState("");
   const [answerToAdd, setanswerToAdd] = useState("");
   const [answersGrouped, setanswersGrouped] = useState([]);
@@ -241,6 +250,7 @@ const AddQuestions = () => {
           setquestionToAdd("");
           setanswerToAdd("");
           setanswersGrouped([]);
+          setquestionAddedTrigger(!questionAddedTrigger);
           console.log(data.msg);
         }
       });
@@ -305,7 +315,11 @@ const AddQuestions = () => {
   );
 };
 
-const AllQuestions = () => {
+const AllQuestions = ({
+  questionAddedTrigger,
+  quizAddedTrigger,
+  setquizAddedTrigger,
+}) => {
   const [allQuestions, setallQuestions] = useState([]);
 
   useEffect(() => {
@@ -324,7 +338,7 @@ const AllQuestions = () => {
         });
     };
     getAllQuestionsWithAnswers();
-  }, []);
+  }, [questionAddedTrigger]);
 
   const [selectedQuestions, setselectedQuestions] = useState([]);
   const [passcodeForQuiz, setpasscodeForQuiz] = useState("");
@@ -356,6 +370,7 @@ const AllQuestions = () => {
         } else {
           setpasscodeForQuiz("");
           setselectedQuestions([]);
+          setquizAddedTrigger(!quizAddedTrigger);
           console.log(data.msg);
         }
       });
@@ -423,7 +438,7 @@ const AllQuestions = () => {
   );
 };
 
-const Quizzes = () => {
+const Quizzes = ({ quizAddedTrigger }) => {
   const [allQuizzes, setallQuizzes] = useState([]);
 
   useEffect(() => {
@@ -442,7 +457,7 @@ const Quizzes = () => {
         });
     };
     getAllQuizzesWithAnswers();
-  }, []);
+  }, [quizAddedTrigger]);
 
   const [quizQuestions, setquizQuestions] = useState([]);
 
