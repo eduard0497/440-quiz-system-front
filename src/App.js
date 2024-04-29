@@ -58,7 +58,7 @@ const LogRegTeacher = () => {
 
   const registerTeacher = () => {
     if (!fname || !lname || !username || !password) {
-      console.log("Some inputs are missing");
+      alert("Inputs are missing");
     } else {
       fetch(`${process.env.REACT_APP_SERVER_LINK}/teacher-register`, {
         method: "post",
@@ -72,9 +72,15 @@ const LogRegTeacher = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log(data.msg);
+          alert(data.msg);
           clearInputsForRegister();
         });
+    }
+  };
+
+  const handleKeyPressRegister = (event) => {
+    if (event.key === "Enter") {
+      registerTeacher();
     }
   };
 
@@ -90,7 +96,7 @@ const LogRegTeacher = () => {
 
   const loginTeacher = () => {
     if (!usernameLogin || !passwordLogin) {
-      console.log("Some inputs are missing");
+      alert("Inputs are missing");
     } else {
       fetch(`${process.env.REACT_APP_SERVER_LINK}/teacher-login`, {
         method: "post",
@@ -103,7 +109,7 @@ const LogRegTeacher = () => {
         .then((res) => res.json())
         .then((data) => {
           if (data.status === 0) {
-            console.log(data.msg);
+            alert(data.msg);
           } else {
             sessionStorage.setItem("teacher_id", data.result[0].id);
             sessionStorage.setItem("teacher_fname", data.result[0].fname);
@@ -114,56 +120,76 @@ const LogRegTeacher = () => {
     }
   };
 
+  const handleKeyPressLogin = (event) => {
+    if (event.key === "Enter") {
+      loginTeacher();
+    }
+  };
+
   return (
-    <div className="row_space_around">
-      <div className="column border">
+    <div className="row_space_around margin_top">
+      <div className="container_form">
         <h1>Register Teacher</h1>
         <input
           type="text"
           placeholder="First Name"
           value={fname}
           onChange={(e) => setfname(e.target.value)}
+          onKeyDown={handleKeyPressRegister}
         />
         <input
           type="text"
           placeholder="Last Name"
           value={lname}
           onChange={(e) => setlname(e.target.value)}
+          onKeyDown={handleKeyPressRegister}
         />
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setusername(e.target.value)}
+          onKeyDown={handleKeyPressRegister}
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setpassword(e.target.value)}
+          onKeyDown={handleKeyPressRegister}
         />
         <div className="row_space_around">
-          <button onClick={clearInputsForRegister}>Clear</button>
-          <button onClick={registerTeacher}>Register</button>
+          <button onClick={clearInputsForRegister} className="clear_button">
+            Clear
+          </button>
+          <button onClick={registerTeacher} className="submit_button">
+            Register
+          </button>
         </div>
       </div>
-      <div className="column border">
+      <div className="container_form">
         <h1>LOGIN</h1>
         <input
           type="text"
           placeholder="Username"
           value={usernameLogin}
           onChange={(e) => setusernameLogin(e.target.value)}
+          onKeyDown={handleKeyPressLogin}
         />
         <input
           type="password"
           placeholder="Password"
           value={passwordLogin}
           onChange={(e) => setpasswordLogin(e.target.value)}
+          onKeyDown={handleKeyPressLogin}
         />
         <div className="row_space_around">
-          <button onClick={clearInputsForLogin}>Clear</button>
-          <button onClick={loginTeacher}>Login</button>
+          <button onClick={clearInputsForLogin} className="clear_button">
+            Clear
+          </button>
+          <button onClick={loginTeacher} className="submit_button">
+            Login
+          </button>
         </div>
       </div>
     </div>
@@ -193,12 +219,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
-      <div className="row_space_around border">
+    <div className="padding_20px">
+      <div className="navbar">
         <h1>
           Hi {`${teacherInfo.teacher_fname} ${teacherInfo.teacher_lname}`}!
         </h1>
-        <button onClick={logOut}>Log Out</button>
+        <button onClick={logOut} className="clear_button">
+          Log Out
+        </button>
       </div>
       <AddQuestions
         questionAddedTrigger={questionAddedTrigger}
@@ -258,7 +286,7 @@ const AddQuestions = ({ questionAddedTrigger, setquestionAddedTrigger }) => {
 
   return (
     <div className="margin_top  row_space_between">
-      <div className="column border width_500">
+      <div className="container_form width_500">
         <h2>Add Question</h2>
         <input
           type="text"
@@ -274,26 +302,27 @@ const AddQuestions = ({ questionAddedTrigger, setquestionAddedTrigger }) => {
         />
         <div className="row_space_around">
           <button
-            className="green"
-            onClick={() => setQuestionAsTrueOrFalse(true)}
-          >
-            Set As True
-          </button>
-          <button
-            className="red"
+            className="clear_button"
             onClick={() => setQuestionAsTrueOrFalse(false)}
           >
             Set As False
           </button>
+          <button
+            className="submit_button"
+            onClick={() => setQuestionAsTrueOrFalse(true)}
+          >
+            Set As True
+          </button>
         </div>
       </div>
       {questionToAdd && (
-        <div className="border column">
+        <div className="container_form width_400">
           <h3>{questionToAdd}</h3>
           {answersGrouped.map((answer, index) => {
             return (
               <div key={index} className="row">
                 <button
+                  className="clear_button"
                   onClick={() => {
                     let newAnswersGrouped = [...answersGrouped];
                     newAnswersGrouped.splice(index, 1);
@@ -308,7 +337,9 @@ const AddQuestions = ({ questionAddedTrigger, setquestionAddedTrigger }) => {
               </div>
             );
           })}
-          <button onClick={addQuestion}>Add the question</button>
+          <button className="submit_button" onClick={addQuestion}>
+            Add the question
+          </button>
         </div>
       )}
     </div>
@@ -381,6 +412,7 @@ const AllQuestions = ({
       {selectedQuestions.length === 0 ? null : (
         <div className="row">
           <input
+            className="create_quiz_input"
             type="text"
             placeholder="Passcode for quiz"
             value={passcodeForQuiz}
@@ -388,10 +420,12 @@ const AllQuestions = ({
               setpasscodeForQuiz(e.target.value);
             }}
           />
-          <button onClick={createQuiz}>Create Quiz</button>
+          <button className="submit_button" onClick={createQuiz}>
+            Create Quiz
+          </button>
         </div>
       )}
-      <table className="table">
+      <table className="table margin_top">
         <thead>
           <tr>
             <td></td>
@@ -505,8 +539,6 @@ const Quizzes = ({ quizAddedTrigger }) => {
       });
   };
 
-  console.log(allQuizSubmissions);
-
   return (
     <div className="margin_top">
       <table className="table">
@@ -528,13 +560,20 @@ const Quizzes = ({ quizAddedTrigger }) => {
                 <td>{quiz.questions.length}</td>
                 <td>{`${quiz.fname} ${quiz.lname}`}</td>
                 <td>
-                  <button onClick={() => viewQuestionsForQuiz(quiz.questions)}>
+                  <button
+                    className="submit_button"
+                    onClick={() => viewQuestionsForQuiz(quiz.questions)}
+                  >
                     View Questions
                   </button>
-                  <button onClick={() => getSubmissionsForQuiz(quiz.id)}>
+                  <button
+                    className="submit_button"
+                    onClick={() => getSubmissionsForQuiz(quiz.id)}
+                  >
                     Submissions
                   </button>
                   <button
+                    className="submit_button"
                     onClick={() => {
                       navigator.clipboard.writeText(
                         `${process.env.REACT_APP_FRONT_END_LINK}?quizID=${quiz.id}`
@@ -550,7 +589,7 @@ const Quizzes = ({ quizAddedTrigger }) => {
         </tbody>
       </table>
 
-      <div className="row_space_between">
+      <div className="row_space_between margin_top">
         {quizQuestions.length === 0 ? null : (
           <table className="table">
             <thead>
@@ -575,7 +614,7 @@ const Quizzes = ({ quizAddedTrigger }) => {
         )}
 
         {allQuizSubmissions.length === 0 ? null : (
-          <table className="table place_itself_center margin_top">
+          <table className="table place_itself_center">
             <thead>
               <tr>
                 <td>Quiz ID</td>
@@ -597,14 +636,18 @@ const Quizzes = ({ quizAddedTrigger }) => {
                     <td>{data.student_name}</td>
                     <td>{data.total_quiz_points}</td>
                     <td>{data.student_earned_points}</td>
-                    {data.final_percentage ? (
+                    {data.final_percentage || data.final_percentage === 0 ? (
                       <td>{`${data.final_percentage}%`}</td>
                     ) : (
                       <td></td>
                     )}
 
                     <td>{new Date(data.started).toLocaleString()}</td>
-                    <td>{new Date(data.finished).toLocaleString()}</td>
+                    <td>
+                      {data.finished != null
+                        ? new Date(data.finished).toLocaleString()
+                        : null}
+                    </td>
                   </tr>
                 );
               })}
@@ -655,9 +698,11 @@ const QuizPage = ({ currentQuizID }) => {
       case "pending":
         return (
           <>
-            <div className="row_space_around">
+            <div className="navbar">
               <h1 className="text_center">QUIZ #{currentQuizID}</h1>
-              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+              <button className="clear_button" onClick={exitQuiz}>
+                EXIT QUIZ!!!
+              </button>
             </div>
             <QuizPending currentQuizID={currentQuizID} />
           </>
@@ -665,9 +710,11 @@ const QuizPage = ({ currentQuizID }) => {
       case "started":
         return (
           <>
-            <div className="row_space_around">
+            <div className="navbar">
               <h1 className="text_center">QUIZ #{currentQuizID}</h1>
-              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+              <button className="clear_button" onClick={exitQuiz}>
+                EXIT QUIZ!!!
+              </button>
             </div>
             <QuizStarted currentQuizID={currentQuizID} />
           </>
@@ -675,9 +722,11 @@ const QuizPage = ({ currentQuizID }) => {
       case "finished":
         return (
           <>
-            <div className="row_space_around">
+            <div className="navbar">
               <h1 className="text_center">QUIZ #{currentQuizID}</h1>
-              <button onClick={exitQuiz}>EXIT QUIZ!!!</button>
+              <button className="clear_button" onClick={exitQuiz}>
+                EXIT QUIZ!!!
+              </button>
             </div>
             <QuizFinished currentQuizID={currentQuizID} />
           </>
@@ -692,7 +741,7 @@ const QuizPage = ({ currentQuizID }) => {
     }
   };
 
-  return <>{pickCurrentView()}</>;
+  return <div className="padding_top_80_sides">{pickCurrentView()}</div>;
 };
 
 const QuizLogin = ({ currentQuizID }) => {
@@ -708,6 +757,10 @@ const QuizLogin = ({ currentQuizID }) => {
 
   const submitUserInfo = () => {
     if (!studentID || !studentName) return;
+    if (isNaN(studentID)) {
+      alert("Student ID must be a number");
+      return;
+    }
 
     fetch(`${process.env.REACT_APP_SERVER_LINK}/student-login`, {
       method: "post",
@@ -722,7 +775,7 @@ const QuizLogin = ({ currentQuizID }) => {
       .then((res) => res.json())
       .then((data) => {
         if (!data.status) {
-          console.log(data.msg);
+          alert(data.msg);
         } else {
           sessionStorage.setItem("progress_id", data.progress_id);
           window.location.reload();
@@ -730,30 +783,43 @@ const QuizLogin = ({ currentQuizID }) => {
       });
   };
 
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      submitUserInfo();
+    }
+  };
+
   return (
     <div>
-      <div className="column border width_500 margin_top place_itself_center">
+      <div className="container_form width_500 margin_top place_itself_center">
         <input
           type="text"
           placeholder="Student ID..."
           value={studentID}
           onChange={(e) => setstudentID(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
         <input
           type="text"
           placeholder="Student Name..."
           value={studentName}
           onChange={(e) => setstudentName(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
         <input
           type="text"
           placeholder="Quiz Password..."
           value={quizPassword}
           onChange={(e) => setquizPassword(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
         <div className="row_space_around">
-          <button onClick={clearInputs}>CLEAR</button>
-          <button onClick={submitUserInfo}>SUBMIT</button>
+          <button className="clear_button" onClick={clearInputs}>
+            CLEAR
+          </button>
+          <button className="submit_button" onClick={submitUserInfo}>
+            SUBMIT
+          </button>
         </div>
       </div>
     </div>
@@ -799,7 +865,7 @@ const QuizPending = ({ currentQuizID }) => {
       .then((res) => res.json())
       .then((data) => {
         if (!data.status) {
-          console.log(data.msg);
+          alert(data.msg);
         } else {
           window.location.reload();
         }
@@ -809,14 +875,16 @@ const QuizPending = ({ currentQuizID }) => {
   return (
     <>
       {quizInfo.length === 0 ? null : (
-        <div className="column border width_500 margin_top place_itself_center">
+        <div className="container_form width_500 margin_top place_itself_center">
           <h1>Quiz ID: {currentQuizID}</h1>
           <h1>Time Limit: 30 Min</h1>
           <h1>Number of Questions: {quizInfo[0].questions.length}</h1>
           <h1>
             By: {`${quizInfo[0].teacher_fname} ${quizInfo[0].teacher_lname}`}
           </h1>
-          <button onClick={startQuiz}>START QUIZ!</button>
+          <button className="submit_button" onClick={startQuiz}>
+            START QUIZ!
+          </button>
         </div>
       )}
     </>
@@ -870,13 +938,13 @@ const QuizStarted = ({ currentQuizID }) => {
           .then((res) => res.json())
           .then((data) => {
             if (!data.status) {
-              console.log(data.msg);
+              alert(data.msg);
             } else {
               setquizQuestions(data.result);
             }
           });
       } else {
-        console.log("Error In Front End fetching quiz questions");
+        alert("Error In Front End fetching quiz questions");
       }
     };
 
@@ -923,7 +991,7 @@ const QuizStarted = ({ currentQuizID }) => {
   return (
     <div className="margin_top">
       {!quizProgress.length ? null : (
-        <div className="row_space_around place_itself_center margin_top border">
+        <div className="navbar margin_top">
           <h2>ID: {quizProgress[0].quiz_id}</h2>
           <h2>Student ID: {quizProgress[0].student_id}</h2>
           <h2>Student Name: {quizProgress[0].student_name}</h2>
@@ -940,7 +1008,7 @@ const QuizStarted = ({ currentQuizID }) => {
             return (
               <div
                 key={question.question_id}
-                className="margin_top border padding_20px"
+                className="margin_top container_form"
               >
                 <h2>{question.question}</h2>
                 <div className="column">
@@ -970,7 +1038,7 @@ const QuizStarted = ({ currentQuizID }) => {
               </div>
             );
           })}
-          <button className="margin_top" onClick={submitQuiz}>
+          <button className="margin_top submit_button" onClick={submitQuiz}>
             SUBMIT QUIZ!
           </button>
         </div>

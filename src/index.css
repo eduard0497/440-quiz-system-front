@@ -4,8 +4,8 @@
   box-sizing: border-box;
 }
 
-body {
-  padding: 30px 30px 200px 30px;
+html {
+  background-color: #fff;
 }
 
 input {
